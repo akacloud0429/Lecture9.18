@@ -1,0 +1,10 @@
+---
+title: "Lecture9.18"
+output: github_document
+---
+# Data Manipulation
+First, import the data set.
+
+## `select`
+select variables from data frame
+
