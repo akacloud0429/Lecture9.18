@@ -2,9 +2,54 @@
 title: "Lecture9.18"
 output: github_document
 ---
+```{r message=FALSE}
+library(readr)
+library(tidyverse)
+```
 # Data Manipulation
-First, import the data set.
+First, import the data set & clean the variable names.
+```{r collapse=TRUE}
+litters_df = read_csv("../../data_import_examples/FAS_litters.csv", na = c("NA", ".", ""))
+litters_df = janitor::clean_names(litters_df)
+names(litters_df)
+```
+## `select` variables from data frame
+* select specific columns
+```{r results='hide'}
+select(litters_df, group, litter_number, gd0_weight)
+```
+* select a range of columns
+```{r results='hide'}
+select(litters_df, group:gd_of_birth)
+```
+* select by remove certain columns
+```{r results='hide'}
+select(litters_df, -group, -litter_number, -gd0_weight)
+select(litters_df, -(group:gd_of_birth))
+```
+* select by prefix
+```{r results='hide'}
+select(litters_df, group, starts_with("gd"))
+```
+* select by suffix
+```{r results='hide'}
+select(litters_df, group, contains("gd"))
+```
+* rearrange by selecting
+```{r results='hide'}
+select(litters_df, starts_with("gd"), group)
+select(litters_df, litter_number, everything()) 
+```
+put `litternumber` piror to else, same to 
+```{r results='hide'}
+relocate(litters_df, litter_number)
+```
+* rename by selecting 
+```{r results='hide'}
+#rename group variable
+select(litters_df, GROUP = group, everything())
+rename(litters_df, GROUP = group) # same function
+```
 
-## `select`
-select variables from data frame
+
 
