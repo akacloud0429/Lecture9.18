@@ -12,21 +12,13 @@ First, import the data set & clean the variable names.
 
 ``` r
 litters_df = read_csv("../../data_import_examples/FAS_litters.csv", na = c("NA", ".", ""))
-## Rows: 49 Columns: 8
-## ── Column specification ────────────────────────────────────────────────────────
-## Delimiter: ","
-## chr (2): Group, Litter Number
-## dbl (6): GD0 weight, GD18 weight, GD of Birth, Pups born alive, Pups dead @ ...
-## 
-## ℹ Use `spec()` to retrieve the full column specification for this data.
-## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
 litters_df = janitor::clean_names(litters_df)
 names(litters_df)
-## [1] "group"           "litter_number"   "gd0_weight"      "gd18_weight"    
-## [5] "gd_of_birth"     "pups_born_alive" "pups_dead_birth" "pups_survive"
 ```
 
-## `select` variables from data frame
+## `select` variables from dataframe
+
+We apply `select` on **columns**.
 
 - select specific columns
 
@@ -79,3 +71,35 @@ relocate(litters_df, litter_number)
 select(litters_df, GROUP = group, everything())
 rename(litters_df, GROUP = group) # same function
 ```
+
+## `filter`
+
+We use `filter` to filter out **rows**.
+
+- `filter` will turn rows that return **TRUE** to all conditions
+
+``` r
+filter(litters_df, gd_of_birth == 20, pups_born_alive >= 6, pups_dead_birth <= 0)
+```
+
+- filter for non-matches
+
+``` r
+filter(litters_df, pups_born_alive !=6)
+```
+
+- match to a set {}
+
+``` r
+# return group that in Condition7 and Condition8
+filter(litters_df, group %in% c("Con7", "Con8"))
+```
+
+- `filter` out missing rows with `drop_na()`
+
+``` r
+drop_na(litters_df) #for the entire data set
+drop_na(litters_df, gd0_weight) #for specific rows
+```
+
+# `mutate`
