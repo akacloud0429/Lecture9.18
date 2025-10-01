@@ -4,6 +4,8 @@ Lecture9.18
 ``` r
 library(readr)
 library(tidyverse)
+library(readxl)
+library(haven)
 ```
 
 # Data Manipulation
@@ -179,3 +181,163 @@ litters_df =
     group = str_to_lower(group)) |> 
   drop_na(wt_gain)
 ```
+
+# Lecture 9.23 (Tidy Data)
+
+## Pivot Longer 合并columns
+
+``` r
+pulse_df = 
+  read_sas("../../data_import_examples/public_pulse_data.sas7bdat") |>
+  janitor::clean_names() |>
+  pivot_longer(
+    cols = bdi_score_bl:bdi_score_12m, #from column A to column B, cols = A:B
+    names_to = "visit", #combine cols into one column named 'visit'
+    values_to = "bdi_score", #attribute the values to this new column named 'bdi_score'
+    names_prefix = "bdi_score_") |> #delete strings in the one column
+  mutate(visit = replace(visit, visit == "bl", "00m")) |> #be consistent about the unit
+  relocate(id, visit)
+#replace(): replace(a, condition, b), replace a to b if qualifies the condition
+```
+
+Another example:
+
+``` r
+litters_df2 = 
+  read_csv("../../data_import_examples/FAS_litters.csv", na = c("NA",".","")) |>
+  janitor::clean_names() |>
+  # then we combine gd0_weight and gd18_weight 
+  pivot_longer(
+    cols = gd0_weight:gd18_weight,
+    names_to = "gd_time", 
+    values_to = "weight") |>
+  # change gd0_weight to 0, vice versa
+  mutate(gd_time = case_match(
+    gd_time,
+    "gd0_weight" ~ 0,
+    "gd18_weight" ~ 18
+  ))
+```
+
+    ## Rows: 49 Columns: 8
+    ## ── Column specification ────────────────────────────────────────────────────────
+    ## Delimiter: ","
+    ## chr (2): Group, Litter Number
+    ## dbl (6): GD0 weight, GD18 weight, GD of Birth, Pups born alive, Pups dead @ ...
+    ## 
+    ## ℹ Use `spec()` to retrieve the full column specification for this data.
+    ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+
+## Pivot Wider 拆分成多个columns
+
+First we create a table.
+
+``` r
+analysis_df = 
+  tibble(group = c("treatment", "treatment", "control", "control"),
+         time = c("pre", "post", "pre", "post"),
+         mean = c(4, 10, 4.2, 5))
+View(analysis_df)
+```
+
+Now we clean this dataframe.
+
+``` r
+analysis_df |>
+  pivot_wider(
+    # create new names
+    names_from = time,
+    values_from = mean
+  ) |>
+  # produce output for visualization
+  knitr::kable()
+```
+
+| group     | pre | post |
+|:----------|----:|-----:|
+| treatment | 4.0 |   10 |
+| control   | 4.2 |    5 |
+
+## Binding Tables
+
+Use this when we have multiple datasets
+
+``` r
+fellowship_ring_original = 
+  read_excel("../../data_import_examples/LotR_Words.xlsx")
+```
+
+    ## New names:
+    ## • `` -> `...2`
+    ## • `` -> `...3`
+    ## • `` -> `...4`
+    ## • `` -> `...6`
+    ## • `` -> `...7`
+    ## • `` -> `...8`
+    ## • `` -> `...10`
+    ## • `` -> `...11`
+
+``` r
+View(fellowship_ring_original)
+
+fellowship_ring = 
+  read_excel("../../data_import_examples/LotR_Words.xlsx", range = "B3:D6") |>
+  mutate(movie = "fellowship_ring")
+
+two_towers = 
+  read_excel("../../data_import_examples/LotR_Words.xlsx", range = "F3:H6") |>
+  mutate(movie = "two_towers")
+
+return_of_king = 
+  read_excel("../../data_import_examples/LotR_Words.xlsx", range = "J3:L6") |>
+  mutate(movie = "return_of_king")
+
+lotr.df_nogender = 
+  bind_rows(fellowship_ring, two_towers, return_of_king)
+View(lotr.df_nogender)
+
+lotr.df_gender = 
+  bind_rows(fellowship_ring, two_towers, return_of_king) |>
+  janitor::clean_names() |>
+  pivot_longer(
+    cols = female:male,
+    names_to = "sex",
+    values_to = "words"
+  ) |>
+  relocate(movie, race, sex, words) |>
+  # convert to lowercase
+  mutate(race = str_to_lower(race))
+View(lotr.df_gender)
+```
+
+## Joining dataset
+
+Import `litters` dataset
+
+``` r
+litters_df3 = 
+  read_csv("../../data_import_examples/FAS_litters.csv", na = c("NA",".","")) |>
+  janitor::clean_names() |>
+  mutate(wt_gain = gd18_weight - gd0_weight) |>
+  # separate GROUP into DOSE and DAYOFTREATMENT, separate from the 3rd index
+  separate(
+    group, into = c("dose", "day_of_treatment"), sep = 3
+  )
+```
+
+    ## Rows: 49 Columns: 8
+    ## ── Column specification ────────────────────────────────────────────────────────
+    ## Delimiter: ","
+    ## chr (2): Group, Litter Number
+    ## dbl (6): GD0 weight, GD18 weight, GD of Birth, Pups born alive, Pups dead @ ...
+    ## 
+    ## ℹ Use `spec()` to retrieve the full column specification for this data.
+    ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.
+
+``` r
+View(litters_df3)
+```
+
+Import`pups` next!
+
+Join the datasets!
