@@ -103,3 +103,79 @@ drop_na(litters_df, gd0_weight) #for specific rows
 ```
 
 # `mutate`
+
+We use `mutate()` to create or modify variables.
+
+- create new variables
+- make (modify) variable lowercase
+
+``` r
+mutate(
+  litters_df, 
+  wt_gain = gd18_weight - gd0_weight,
+  group = str_to_lower(group)
+) #Con --> con
+```
+
+# `arrange`
+
+``` r
+# rank group first, then pups_born_alive from lowest to highest
+arrange(litters_df, group, pups_born_alive)
+arrange(litters_df, desc(group), pups_born_alive)
+```
+
+# PIPES
+
+- pipes put the `select`,`filter`,`mutate` and `arrange` together.
+
+Some bad examples will be:
+
+``` r
+# Too confused
+litters_df_raw = read_csv("../../data_import_examples/FAS_litters.csv", na = c("NA", ".", ""))
+litters_df_clean_names = janitor::clean_names(litters_df_raw)
+litters_df_selected_cols = select(litters_df_clean_names, -pups_survive)
+litters_df_with_vars = 
+  mutate(
+    litters_df_selected_cols, 
+    wt_gain = gd18_weight - gd0_weight,
+    group = str_to_lower(group))
+litters_df_with_vars_without_missing = 
+  drop_na(litters_df_with_vars, wt_gain)
+litters_df_with_vars_without_missing
+```
+
+OR
+
+``` r
+# Has to be read inside
+litters_df_clean = 
+  drop_na(
+    mutate(
+      select(
+        janitor::clean_names(
+          read_csv("../../data_import_examples/FAS_litters.csv", na = c("NA", ".", ""))
+          ), 
+      -pups_survive
+      ),
+    wt_gain = gd18_weight - gd0_weight,
+    group = str_to_lower(group)
+    ),
+  wt_gain
+  )
+```
+
+We use pipes to avoid all these: pipes **pass the result** of the
+previous function to the next function
+
+``` r
+litters_df = 
+  read_csv("../../data_import_examples/FAS_litters.csv", na = c("NA", ".", "")) |> 
+  janitor::clean_names() |> 
+  select(-pups_survive) |> 
+  mutate(
+    wt_gain = gd18_weight - gd0_weight,
+    group = str_to_lower(group)) |> 
+  drop_na(wt_gain)
+```
